@@ -1,32 +1,46 @@
-// index.js
-// where your node app starts
+// Import required modules
+const express = require('express');
+const app = express();
 
-// init project
-var express = require('express');
-var app = express();
-
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
-
-// http://expressjs.com/en/starter/static-files.html
+// Middleware to serve static files
 app.use(express.static('public'));
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (req, res) {
+// Base route: serve the homepage
+app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html');
 });
 
+// API endpoint for timestamp
+app.get('/api/:date?', (req, res) => {
+  const dateParam = req.params.date;
 
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+  let date;
+  
+  // Check if the parameter is empty
+  if (!dateParam) {
+    date = new Date(); // Current date
+  } else {
+    // Check if the parameter is numeric (UNIX timestamp)
+    if (!isNaN(dateParam)) {
+      date = new Date(parseInt(dateParam)); // Convert to number and create date
+    } else {
+      date = new Date(dateParam); // Parse as ISO-8601 date
+    }
+  }
+
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    res.json({ error: "Invalid Date" });
+  } else {
+    res.json({
+      unix: date.getTime(),
+      utc: date.toUTCString(),
+    });
+  }
 });
 
-
-
-// Listen on port set in environment variable or default to 3000
-var listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+// Listen on the provided port or default to 3000
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
